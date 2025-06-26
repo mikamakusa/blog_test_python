@@ -1,0 +1,186 @@
+version: '3.8'
+
+services:
+  # MongoDB
+  mongodb:
+    image: mongo:7.0
+    container_name: blog_mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  # MinIO
+  minio:
+    image: minio/minio:latest
+    container_name: blog_minio
+    restart: always
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+
+  # Auth Microservice
+  auth:
+    build:
+      context: ./auth
+      dockerfile: Dockerfile
+    container_name: blog_auth
+    restart: always
+    environment:
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      - MONGODB_DATABASE=blog_auth
+      - MONGODB_COLLECTION=users
+      - MONGODB_USERNAME=admin
+      - MONGODB_PASSWORD=password
+      - JWT_SECRET_KEY=your-secret-key-here
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+    ports:
+      - "8001:8000"
+    depends_on:
+      - mongodb
+
+  # Medias Microservice
+  medias:
+    build:
+      context: ./medias
+      dockerfile: Dockerfile
+    container_name: blog_medias
+    restart: always
+    environment:
+      - MINIO_HOST=minio
+      - MINIO_PORT=9000
+      - MINIO_BUCKET=blog-medias
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+    ports:
+      - "8002:8000"
+    depends_on:
+      - minio
+
+  # Posts Microservice
+  posts:
+    build:
+      context: ./posts
+      dockerfile: Dockerfile
+    container_name: blog_posts
+    restart: always
+    environment:
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      - MONGODB_DATABASE=blog_posts
+      - MONGODB_COLLECTION=posts
+      - MONGODB_USERNAME=admin
+      - MONGODB_PASSWORD=password
+    ports:
+      - "8003:8000"
+    depends_on:
+      - mongodb
+
+  # Ads Microservice
+  ads:
+    build:
+      context: ./ads
+      dockerfile: Dockerfile
+    container_name: blog_ads
+    restart: always
+    environment:
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      - MONGODB_DATABASE=blog_ads
+      - MONGODB_COLLECTION=ads
+      - MONGODB_USERNAME=admin
+      - MONGODB_PASSWORD=password
+    ports:
+      - "8004:8000"
+    depends_on:
+      - mongodb
+
+  # Events Microservice
+  events:
+    build:
+      context: ./events
+      dockerfile: Dockerfile
+    container_name: blog_events
+    restart: always
+    environment:
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      - MONGODB_DATABASE=blog_events
+      - MONGODB_COLLECTION=events
+      - MONGODB_USERNAME=admin
+      - MONGODB_PASSWORD=password
+    ports:
+      - "8005:8000"
+    depends_on:
+      - mongodb
+
+  # Polls Microservice
+  polls:
+    build:
+      context: ./polls
+      dockerfile: Dockerfile
+    container_name: blog_polls
+    restart: always
+    environment:
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      - MONGODB_DATABASE=blog_polls
+      - MONGODB_COLLECTION=polls
+      - MONGODB_USERNAME=admin
+      - MONGODB_PASSWORD=password
+    ports:
+      - "8006:8000"
+    depends_on:
+      - mongodb
+
+  # Metrics Microservice
+  metrics:
+    build:
+      context: ./metrics
+      dockerfile: Dockerfile
+    container_name: blog_metrics
+    restart: always
+    environment:
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      - MONGODB_DATABASE=blog_metrics
+      - MONGODB_USERNAME=admin
+      - MONGODB_PASSWORD=password
+    ports:
+      - "8007:8000"
+    depends_on:
+      - mongodb
+
+  # Frontend/Admin Dashboard
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: blog_frontend
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - auth
+      - medias
+      - posts
+      - ads
+      - events
+      - polls
+      - metrics
+
+volumes:
+  mongodb_data:
+  minio_data: 

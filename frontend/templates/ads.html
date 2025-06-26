@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Ads</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .ads-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .ads-table th, .ads-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .ads-table th {
+            background-color: #f2f2f2;
+        }
+        .form-container {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .btn {
+            background: #2d3e50;
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-right: 0.5rem;
+        }
+        .btn:hover {
+            background: #ffb347;
+            color: #222;
+        }
+        .btn-danger {
+            background: #d32f2f;
+        }
+        .btn-danger:hover {
+            background: #b71c1c;
+        }
+        .btn-success {
+            background: #388e3c;
+        }
+        .btn-success:hover {
+            background: #2e7d32;
+        }
+        .status-active {
+            color: #388e3c;
+            font-weight: bold;
+        }
+        .status-inactive {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        .ad-image {
+            max-width: 100px;
+            max-height: 50px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Manage Ads</h1>
+        <nav>
+            <a href="/admin">Back to Dashboard</a>
+        </nav>
+    </header>
+    <main>
+        <div class="form-container">
+            <h2 id="form-title">Create New Ad</h2>
+            <form id="ad-form">
+                <input type="hidden" id="ad-id" name="id">
+                <div class="form-group">
+                    <label for="title">Title:</label>
+                    <input type="text" id="title" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="url">URL:</label>
+                    <input type="url" id="url" name="url" required>
+                </div>
+                <div class="form-group">
+                    <label for="image">Image URL:</label>
+                    <input type="url" id="image" name="image" required>
+                </div>
+                <div class="form-group">
+                    <label for="is_active">Status:</label>
+                    <select id="is_active" name="is_active">
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success">Save Ad</button>
+                <button type="button" class="btn" onclick="resetForm()">Cancel</button>
+            </form>
+        </div>
+
+        <div class="form-container">
+            <h2>Ads List</h2>
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search ads by title or description..." onkeyup="filterAds()">
+            </div>
+            <div class="filter-container">
+                <select id="status-filter" onchange="filterAds()">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+                <select id="type-filter" onchange="filterAds()">
+                    <option value="">All Types</option>
+                    <option value="banner">Banner</option>
+                    <option value="sidebar">Sidebar</option>
+                    <option value="popup">Popup</option>
+                </select>
+            </div>
+            <button class="btn" onclick="showCreateForm()">Create New Ad</button>
+            <table class="ads-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Clicks</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="ads-table-body">
+                    <!-- Ads will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        let ads = [];
+        let filteredAds = [];
+
+        // Load ads on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAds();
+        });
+
+        async function loadAds() {
+            try {
+                const response = await fetch('/api/ads');
+                const data = await response.json();
+                ads = data.ads || [];
+                filteredAds = [...ads];
+                displayAds();
+            } catch (error) {
+                console.error('Error loading ads:', error);
+            }
+        }
+
+        function displayAds() {
+            const tbody = document.getElementById('ads-table-body');
+            tbody.innerHTML = '';
+
+            filteredAds.forEach(ad => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${ad.title}</td>
+                    <td>${ad.type}</td>
+                    <td class="${ad.is_active ? 'status-active' : 'status-inactive'}">
+                        ${ad.is_active ? 'Active' : 'Inactive'}
+                    </td>
+                    <td>${ad.clicks || 0}</td>
+                    <td>${new Date(ad.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn" onclick="editAd('${ad.id}')">Edit</button>
+                        <button class="btn btn-danger" onclick="deleteAd('${ad.id}')">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function showCreateForm() {
+            document.getElementById('form-title').textContent = 'Create New Ad';
+            document.getElementById('ad-form').reset();
+            document.getElementById('ad-id').value = '';
+        }
+
+        function editAd(adId) {
+            const ad = ads.find(a => a.id === adId);
+            if (ad) {
+                document.getElementById('form-title').textContent = 'Edit Ad';
+                document.getElementById('ad-id').value = ad.id;
+                document.getElementById('title').value = ad.title;
+                document.getElementById('url').value = ad.url;
+                document.getElementById('image').value = ad.image;
+                document.getElementById('is_active').value = ad.is_active.toString();
+            }
+        }
+
+        async function deleteAd(adId) {
+            if (confirm('Are you sure you want to delete this ad?')) {
+                try {
+                    const response = await fetch(`/api/ads/${adId}`, {
+                        method: 'DELETE'
+                    });
+                    if (response.ok) {
+                        loadAds();
+                    } else {
+                        alert('Error deleting ad');
+                    }
+                } catch (error) {
+                    console.error('Error deleting ad:', error);
+                    alert('Error deleting ad');
+                }
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('form-title').textContent = 'Create New Ad';
+            document.getElementById('ad-form').reset();
+            document.getElementById('ad-id').value = '';
+        }
+
+        function filterAds() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const statusFilter = document.getElementById('status-filter').value;
+            const typeFilter = document.getElementById('type-filter').value;
+            
+            filteredAds = ads.filter(ad => {
+                const matchesSearch = ad.title.toLowerCase().includes(searchTerm) || 
+                                    ad.description.toLowerCase().includes(searchTerm);
+                const matchesStatus = statusFilter === '' || 
+                                    (statusFilter === 'active' && ad.is_active) || 
+                                    (statusFilter === 'inactive' && !ad.is_active);
+                const matchesType = typeFilter === '' || ad.type === typeFilter;
+                return matchesSearch && matchesStatus && matchesType;
+            });
+            
+            displayAds();
+        }
+
+        document.getElementById('ad-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const adData = {
+                title: formData.get('title'),
+                url: formData.get('url'),
+                image: formData.get('image'),
+                is_active: formData.get('is_active') === 'true'
+            };
+
+            const adId = formData.get('id');
+            const url = adId ? `/api/ads/${adId}` : '/api/ads';
+            const method = adId ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(adData)
+                });
+
+                if (response.ok) {
+                    loadAds();
+                    resetForm();
+                } else {
+                    alert('Error saving ad');
+                }
+            } catch (error) {
+                console.error('Error saving ad:', error);
+                alert('Error saving ad');
+            }
+        });
+    </script>
+</body>
+</html> 

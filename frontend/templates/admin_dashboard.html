@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <h1>Admin Dashboard</h1>
+        <nav>
+            <a href="/admin">Dashboard</a>
+            <a href="/admin/medias">Manage Medias</a>
+            <a href="/admin/posts">Manage Posts</a>
+            <a href="/admin/ads">Manage Ads</a>
+            <a href="/admin/events">Manage Events</a>
+            <a href="/admin/polls">Manage Polls</a>
+            <a href="/logout">Logout</a>
+        </nav>
+    </header>
+    <main>
+        <section>
+            <h2>Metrics</h2>
+            <ul>
+                <li><strong>Users:</strong> {{ metrics.users.total }} (Active: {{ metrics.users.active }}, Inactive: {{ metrics.users.inactive }}, Pending: {{ metrics.users.pending }})</li>
+                <li><strong>Posts:</strong> {{ metrics.posts.total }}</li>
+                <li><strong>Ads:</strong> {{ metrics.ads.total }} (Active: {{ metrics.ads.active }}, Inactive: {{ metrics.ads.inactive }})</li>
+                <li><strong>Events:</strong> {{ metrics.events.total }}</li>
+                <li><strong>Polls:</strong> {{ metrics.polls.total }}</li>
+            </ul>
+        </section>
+    </main>
+</body>
+</html> 

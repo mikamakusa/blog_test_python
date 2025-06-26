@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Events</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .events-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .events-table th, .events-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .events-table th {
+            background-color: #f2f2f2;
+        }
+        .form-container {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .btn {
+            background: #2d3e50;
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-right: 0.5rem;
+        }
+        .btn:hover {
+            background: #ffb347;
+            color: #222;
+        }
+        .btn-danger {
+            background: #d32f2f;
+        }
+        .btn-danger:hover {
+            background: #b71c1c;
+        }
+        .btn-success {
+            background: #388e3c;
+        }
+        .btn-success:hover {
+            background: #2e7d32;
+        }
+        .date-input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Manage Events</h1>
+        <nav>
+            <a href="/admin">Back to Dashboard</a>
+        </nav>
+    </header>
+    <main>
+        <div class="form-container">
+            <h2 id="form-title">Create New Event</h2>
+            <form id="event-form">
+                <input type="hidden" id="event-id" name="id">
+                <div class="form-group">
+                    <label for="name">Event Name:</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description:</label>
+                    <textarea id="description" name="description" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="date_start">Start Date:</label>
+                    <input type="datetime-local" id="date_start" name="date_start" class="date-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="date_end">End Date:</label>
+                    <input type="datetime-local" id="date_end" name="date_end" class="date-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="call_for_paper_date_start">Call for Papers Start Date:</label>
+                    <input type="datetime-local" id="call_for_paper_date_start" name="call_for_paper_date_start" class="date-input">
+                </div>
+                <div class="form-group">
+                    <label for="call_for_paper_date_end">Call for Papers End Date:</label>
+                    <input type="datetime-local" id="call_for_paper_date_end" name="call_for_paper_date_end" class="date-input">
+                </div>
+                <button type="submit" class="btn btn-success">Save Event</button>
+                <button type="button" class="btn" onclick="resetForm()">Cancel</button>
+            </form>
+        </div>
+
+        <div class="form-container">
+            <h2>Events List</h2>
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search events by title or description..." onkeyup="filterEvents()">
+            </div>
+            <div class="filter-container">
+                <select id="status-filter" onchange="filterEvents()">
+                    <option value="">All Status</option>
+                    <option value="upcoming">Upcoming</option>
+                    <option value="ongoing">Ongoing</option>
+                    <option value="past">Past</option>
+                </select>
+                <input type="date" id="date-from" placeholder="From Date" onchange="filterEvents()">
+                <input type="date" id="date-to" placeholder="To Date" onchange="filterEvents()">
+            </div>
+            <button class="btn" onclick="showCreateForm()">Create New Event</button>
+            <table class="events-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Date</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="events-table-body">
+                    <!-- Events will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        let events = [];
+        let filteredEvents = [];
+
+        // Load events on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadEvents();
+        });
+
+        async function loadEvents() {
+            try {
+                const response = await fetch('/api/events');
+                const data = await response.json();
+                events = data.events || [];
+                filteredEvents = [...events];
+                displayEvents();
+            } catch (error) {
+                console.error('Error loading events:', error);
+            }
+        }
+
+        function displayEvents() {
+            const tbody = document.getElementById('events-table-body');
+            tbody.innerHTML = '';
+
+            filteredEvents.forEach(event => {
+                const eventDate = new Date(event.event_date);
+                const today = new Date();
+                let status = 'upcoming';
+                if (eventDate < today) {
+                    status = 'past';
+                } else if (eventDate.toDateString() === today.toDateString()) {
+                    status = 'ongoing';
+                }
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${event.title}</td>
+                    <td>${eventDate.toLocaleDateString()}</td>
+                    <td>${event.location}</td>
+                    <td class="status-${status}">${status}</td>
+                    <td>${new Date(event.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn" onclick="editEvent('${event.id}')">Edit</button>
+                        <button class="btn btn-danger" onclick="deleteEvent('${event.id}')">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function showCreateForm() {
+            document.getElementById('form-title').textContent = 'Create New Event';
+            document.getElementById('event-form').reset();
+            document.getElementById('event-id').value = '';
+        }
+
+        function editEvent(eventId) {
+            const event = events.find(e => e.id === eventId);
+            if (event) {
+                document.getElementById('form-title').textContent = 'Edit Event';
+                document.getElementById('event-id').value = event.id;
+                document.getElementById('name').value = event.name;
+                document.getElementById('description').value = event.description;
+                
+                // Convert ISO datetime to datetime-local format
+                const startDate = new Date(event.date_start);
+                const endDate = new Date(event.date_end);
+                document.getElementById('date_start').value = startDate.toISOString().slice(0, 16);
+                document.getElementById('date_end').value = endDate.toISOString().slice(0, 16);
+                
+                if (event.call_for_paper_date_start) {
+                    const cfpStart = new Date(event.call_for_paper_date_start);
+                    document.getElementById('call_for_paper_date_start').value = cfpStart.toISOString().slice(0, 16);
+                }
+                if (event.call_for_paper_date_end) {
+                    const cfpEnd = new Date(event.call_for_paper_date_end);
+                    document.getElementById('call_for_paper_date_end').value = cfpEnd.toISOString().slice(0, 16);
+                }
+            }
+        }
+
+        async function deleteEvent(eventId) {
+            if (confirm('Are you sure you want to delete this event?')) {
+                try {
+                    const response = await fetch(`/api/events/${eventId}`, {
+                        method: 'DELETE'
+                    });
+                    if (response.ok) {
+                        loadEvents();
+                    } else {
+                        alert('Error deleting event');
+                    }
+                } catch (error) {
+                    console.error('Error deleting event:', error);
+                    alert('Error deleting event');
+                }
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('form-title').textContent = 'Create New Event';
+            document.getElementById('event-form').reset();
+            document.getElementById('event-id').value = '';
+        }
+
+        function filterEvents() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const statusFilter = document.getElementById('status-filter').value;
+            const dateFrom = document.getElementById('date-from').value;
+            const dateTo = document.getElementById('date-to').value;
+            
+            filteredEvents = events.filter(event => {
+                const matchesSearch = event.title.toLowerCase().includes(searchTerm) || 
+                                    event.description.toLowerCase().includes(searchTerm);
+                
+                const eventDate = new Date(event.event_date);
+                const today = new Date();
+                let eventStatus = 'upcoming';
+                if (eventDate < today) {
+                    eventStatus = 'past';
+                } else if (eventDate.toDateString() === today.toDateString()) {
+                    eventStatus = 'ongoing';
+                }
+                
+                const matchesStatus = statusFilter === '' || eventStatus === statusFilter;
+                
+                const matchesDateFrom = !dateFrom || eventDate >= new Date(dateFrom);
+                const matchesDateTo = !dateTo || eventDate <= new Date(dateTo);
+                
+                return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo;
+            });
+            
+            displayEvents();
+        }
+
+        document.getElementById('event-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const eventData = {
+                name: formData.get('name'),
+                description: formData.get('description'),
+                date_start: new Date(formData.get('date_start')).toISOString(),
+                date_end: new Date(formData.get('date_end')).toISOString()
+            };
+
+            // Add optional call for paper dates
+            if (formData.get('call_for_paper_date_start')) {
+                eventData.call_for_paper_date_start = new Date(formData.get('call_for_paper_date_start')).toISOString();
+            }
+            if (formData.get('call_for_paper_date_end')) {
+                eventData.call_for_paper_date_end = new Date(formData.get('call_for_paper_date_end')).toISOString();
+            }
+
+            const eventId = formData.get('id');
+            const url = eventId ? `/api/events/${eventId}` : '/api/events';
+            const method = eventId ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(eventData)
+                });
+
+                if (response.ok) {
+                    loadEvents();
+                    resetForm();
+                } else {
+                    alert('Error saving event');
+                }
+            } catch (error) {
+                console.error('Error saving event:', error);
+                alert('Error saving event');
+            }
+        });
+    </script>
+</body>
+</html> 

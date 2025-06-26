@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Posts</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .posts-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .posts-table th, .posts-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .posts-table th {
+            background-color: #f2f2f2;
+        }
+        .form-container {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .form-group textarea {
+            min-height: 200px;
+            resize: vertical;
+        }
+        .btn {
+            background: #2d3e50;
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-right: 0.5rem;
+        }
+        .btn:hover {
+            background: #ffb347;
+            color: #222;
+        }
+        .btn-danger {
+            background: #d32f2f;
+        }
+        .btn-danger:hover {
+            background: #b71c1c;
+        }
+        .btn-success {
+            background: #388e3c;
+        }
+        .btn-success:hover {
+            background: #2e7d32;
+        }
+        .hidden {
+            display: none;
+        }
+        .status-published {
+            color: #388e3c;
+            font-weight: bold;
+        }
+        .status-draft {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        .search-container {
+            margin-bottom: 1rem;
+        }
+        .search-container input {
+            width: 300px;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+        }
+        .filter-container {
+            margin-bottom: 1rem;
+        }
+        .filter-container select {
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Manage Posts</h1>
+        <nav>
+            <a href="/admin">Back to Dashboard</a>
+        </nav>
+    </header>
+    <main>
+        <div class="form-container hidden" id="post-form-container">
+            <h2 id="form-title">Create New Post</h2>
+            <form id="post-form">
+                <input type="hidden" id="post-id" name="id">
+                <div class="form-group">
+                    <label for="title">Title:</label>
+                    <input type="text" id="title" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description:</label>
+                    <textarea id="description" name="description" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="content">Content (Markdown):</label>
+                    <textarea id="content" name="content" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="author">Author:</label>
+                    <input type="text" id="author" name="author" required>
+                </div>
+                <div class="form-group">
+                    <label for="category">Category:</label>
+                    <select id="category" name="category" required>
+                        <option value="technology">Technology</option>
+                        <option value="lifestyle">Lifestyle</option>
+                        <option value="business">Business</option>
+                        <option value="news">News</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="status">Status:</label>
+                    <select id="status" name="status" required>
+                        <option value="draft">Draft</option>
+                        <option value="published">Published</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success">Save Post</button>
+                <button type="button" class="btn" onclick="hideForm()">Cancel</button>
+            </form>
+        </div>
+
+        <div class="form-container">
+            <h2>Posts List</h2>
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search posts by title or content..." onkeyup="filterPosts()">
+            </div>
+            <div class="filter-container">
+                <select id="status-filter" onchange="filterPosts()">
+                    <option value="">All Status</option>
+                    <option value="published">Published</option>
+                    <option value="draft">Draft</option>
+                </select>
+                <select id="category-filter" onchange="filterPosts()">
+                    <option value="">All Categories</option>
+                    <option value="technology">Technology</option>
+                    <option value="lifestyle">Lifestyle</option>
+                    <option value="business">Business</option>
+                    <option value="news">News</option>
+                </select>
+            </div>
+            <button class="btn" onclick="showCreateForm()">Create New Post</button>
+            <table class="posts-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="posts-table-body">
+                    <!-- Posts will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        let posts = [];
+        let filteredPosts = [];
+
+        // Load posts on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPosts();
+        });
+
+        async function loadPosts() {
+            try {
+                const response = await fetch('/api/posts');
+                const data = await response.json();
+                posts = data.posts || [];
+                filteredPosts = [...posts];
+                displayPosts();
+            } catch (error) {
+                console.error('Error loading posts:', error);
+            }
+        }
+
+        function displayPosts() {
+            const tbody = document.getElementById('posts-table-body');
+            tbody.innerHTML = '';
+
+            filteredPosts.forEach(post => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${post.title}</td>
+                    <td>${post.category}</td>
+                    <td class="${post.status === 'published' ? 'status-published' : 'status-draft'}">
+                        ${post.status}
+                    </td>
+                    <td>${new Date(post.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn" onclick="editPost('${post.id}')">Edit</button>
+                        <button class="btn btn-danger" onclick="deletePost('${post.id}')">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function filterPosts() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const statusFilter = document.getElementById('status-filter').value;
+            const categoryFilter = document.getElementById('category-filter').value;
+            
+            filteredPosts = posts.filter(post => {
+                const matchesSearch = post.title.toLowerCase().includes(searchTerm) || 
+                                    post.content.toLowerCase().includes(searchTerm);
+                const matchesStatus = statusFilter === '' || post.status === statusFilter;
+                const matchesCategory = categoryFilter === '' || post.category === categoryFilter;
+                return matchesSearch && matchesStatus && matchesCategory;
+            });
+            
+            displayPosts();
+        }
+
+        function showCreateForm() {
+            document.getElementById('form-title').textContent = 'Create New Post';
+            document.getElementById('post-form').reset();
+            document.getElementById('post-id').value = '';
+            document.getElementById('post-form-container').classList.remove('hidden');
+        }
+
+        function hideForm() {
+            document.getElementById('post-form-container').classList.add('hidden');
+        }
+
+        function editPost(postId) {
+            const post = posts.find(p => p.id === postId);
+            if (post) {
+                document.getElementById('form-title').textContent = 'Edit Post';
+                document.getElementById('post-id').value = post.id;
+                document.getElementById('title').value = post.title;
+                document.getElementById('description').value = post.description;
+                document.getElementById('content').value = post.content;
+                document.getElementById('author').value = post.author;
+                document.getElementById('category').value = post.category;
+                document.getElementById('status').value = post.status;
+                document.getElementById('post-form-container').classList.remove('hidden');
+            }
+        }
+
+        async function deletePost(postId) {
+            if (confirm('Are you sure you want to delete this post?')) {
+                try {
+                    const response = await fetch(`/api/posts/${postId}`, {
+                        method: 'DELETE'
+                    });
+                    if (response.ok) {
+                        loadPosts();
+                    } else {
+                        alert('Error deleting post');
+                    }
+                } catch (error) {
+                    console.error('Error deleting post:', error);
+                    alert('Error deleting post');
+                }
+            }
+        }
+
+        document.getElementById('post-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const postData = {
+                title: formData.get('title'),
+                description: formData.get('description'),
+                content: formData.get('content'),
+                author: formData.get('author'),
+                category: formData.get('category'),
+                status: formData.get('status')
+            };
+
+            const postId = formData.get('id');
+            const url = postId ? `/api/posts/${postId}` : '/api/posts';
+            const method = postId ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(postData)
+                });
+
+                if (response.ok) {
+                    loadPosts();
+                    hideForm();
+                } else {
+                    alert('Error saving post');
+                }
+            } catch (error) {
+                console.error('Error saving post:', error);
+                alert('Error saving post');
+            }
+        });
+    </script>
+</body>
+</html> 

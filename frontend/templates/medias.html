@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Medias</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .medias-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .medias-table th, .medias-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .medias-table th {
+            background-color: #f2f2f2;
+        }
+        .form-container {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .file-upload-container {
+            border: 2px dashed #ccc;
+            padding: 2rem;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            transition: border-color 0.3s;
+        }
+        .file-upload-container.dragover {
+            border-color: #2d3e50;
+            background-color: #f8f9fa;
+        }
+        .file-upload-container input[type="file"] {
+            display: none;
+        }
+        .upload-btn {
+            background: #2d3e50;
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.5rem;
+        }
+        .upload-btn:hover {
+            background: #ffb347;
+            color: #222;
+        }
+        .btn {
+            background: #2d3e50;
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-right: 0.5rem;
+        }
+        .btn:hover {
+            background: #ffb347;
+            color: #222;
+        }
+        .btn-danger {
+            background: #d32f2f;
+        }
+        .btn-danger:hover {
+            background: #b71c1c;
+        }
+        .btn-success {
+            background: #388e3c;
+        }
+        .btn-success:hover {
+            background: #2e7d32;
+        }
+        .media-preview {
+            max-width: 100px;
+            max-height: 100px;
+            border-radius: 4px;
+            object-fit: cover;
+        }
+        .search-container {
+            margin-bottom: 1rem;
+        }
+        .search-container input {
+            width: 300px;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+        }
+        .filter-container {
+            margin-bottom: 1rem;
+        }
+        .filter-container select {
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+        }
+        .upload-progress {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .upload-progress-bar {
+            height: 100%;
+            background-color: #4CAF50;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .file-info {
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            color: #666;
+        }
+        .folders-container {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .folder-tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            border: 1px solid #bbdefb;
+        }
+        .folder-tag:hover {
+            background: #bbdefb;
+        }
+        .folder-tag.active {
+            background: #1976d2;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Manage Medias</h1>
+        <nav>
+            <a href="/admin">Back to Dashboard</a>
+        </nav>
+    </header>
+    <main>
+        <div class="form-container">
+            <h2>Upload Files</h2>
+            <div class="file-upload-container" id="upload-container">
+                <p>Drag and drop files here or click to select</p>
+                <input type="file" id="file-input" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx">
+                <button class="upload-btn" onclick="document.getElementById('file-input').click()">Select Files</button>
+                <div class="upload-progress" id="upload-progress" style="display: none;">
+                    <div class="upload-progress-bar" id="upload-progress-bar"></div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="folder-select">Folder:</label>
+                <select id="folder-select">
+                    <option value="general">General</option>
+                    <option value="posts">Posts</option>
+                    <option value="ads">Ads</option>
+                    <option value="events">Events</option>
+                </select>
+            </div>
+            <button class="btn btn-success" onclick="uploadFiles()">Upload Files</button>
+        </div>
+
+        <div class="form-container">
+            <h2>Media Files</h2>
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search files by name..." onkeyup="filterMedias()">
+            </div>
+            <div class="filter-container">
+                <select id="folder-filter" onchange="filterMedias()">
+                    <option value="">All Folders</option>
+                    <option value="general">General</option>
+                    <option value="posts">Posts</option>
+                    <option value="ads">Ads</option>
+                    <option value="events">Events</option>
+                </select>
+            </div>
+            <div class="folders-container" id="folders-container">
+                <!-- Folder tags will be loaded here -->
+            </div>
+            <table class="medias-table">
+                <thead>
+                    <tr>
+                        <th>Preview</th>
+                        <th>Filename</th>
+                        <th>Folder</th>
+                        <th>Size</th>
+                        <th>Type</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="medias-table-body">
+                    <!-- Media files will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        let medias = [];
+        let filteredMedias = [];
+        let selectedFiles = [];
+
+        // Load medias on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMedias();
+            setupDragAndDrop();
+        });
+
+        function setupDragAndDrop() {
+            const container = document.getElementById('upload-container');
+            const fileInput = document.getElementById('file-input');
+
+            container.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                container.classList.add('dragover');
+            });
+
+            container.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                container.classList.remove('dragover');
+            });
+
+            container.addEventListener('drop', function(e) {
+                e.preventDefault();
+                container.classList.remove('dragover');
+                const files = Array.from(e.dataTransfer.files);
+                handleFileSelection(files);
+            });
+
+            fileInput.addEventListener('change', function(e) {
+                const files = Array.from(e.target.files);
+                handleFileSelection(files);
+            });
+        }
+
+        function handleFileSelection(files) {
+            selectedFiles = files;
+            displaySelectedFiles();
+        }
+
+        function displaySelectedFiles() {
+            const container = document.getElementById('upload-container');
+            const fileInfo = document.createElement('div');
+            fileInfo.className = 'file-info';
+            
+            if (selectedFiles.length > 0) {
+                fileInfo.innerHTML = `<strong>Selected ${selectedFiles.length} file(s):</strong><br>`;
+                selectedFiles.forEach(file => {
+                    fileInfo.innerHTML += `${file.name} (${formatFileSize(file.size)})<br>`;
+                });
+            }
+            
+            // Remove existing file info
+            const existingInfo = container.querySelector('.file-info');
+            if (existingInfo) {
+                existingInfo.remove();
+            }
+            
+            container.appendChild(fileInfo);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        async function uploadFiles() {
+            if (selectedFiles.length === 0) {
+                alert('Please select files to upload');
+                return;
+            }
+
+            const folder = document.getElementById('folder-select').value;
+            const progressBar = document.getElementById('upload-progress-bar');
+            const progressContainer = document.getElementById('upload-progress');
+            
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('folder', folder);
+
+                try {
+                    const response = await fetch('/api/medias/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        const progress = ((i + 1) / selectedFiles.length) * 100;
+                        progressBar.style.width = progress + '%';
+                    } else {
+                        alert(`Error uploading ${file.name}`);
+                    }
+                } catch (error) {
+                    console.error('Error uploading file:', error);
+                    alert(`Error uploading ${file.name}`);
+                }
+            }
+
+            // Reset after upload
+            selectedFiles = [];
+            document.getElementById('file-input').value = '';
+            displaySelectedFiles();
+            progressContainer.style.display = 'none';
+            loadMedias();
+        }
+
+        async function loadMedias() {
+            try {
+                const response = await fetch('/api/medias');
+                const data = await response.json();
+                medias = data.medias || [];
+                filteredMedias = [...medias];
+                displayMedias();
+                loadFolders();
+            } catch (error) {
+                console.error('Error loading medias:', error);
+            }
+        }
+
+        function displayMedias() {
+            const tbody = document.getElementById('medias-table-body');
+            tbody.innerHTML = '';
+
+            filteredMedias.forEach(media => {
+                const row = document.createElement('tr');
+                const isImage = media.content_type.startsWith('image/');
+                const preview = isImage ? 
+                    `<img src="${media.url}" alt="${media.filename}" class="media-preview">` : 
+                    `<div class="media-preview" style="background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">${media.content_type.split('/')[1].toUpperCase()}</div>`;
+                
+                row.innerHTML = `
+                    <td>${preview}</td>
+                    <td>${media.filename}</td>
+                    <td>${media.folder}</td>
+                    <td>${formatFileSize(media.size)}</td>
+                    <td>${media.content_type}</td>
+                    <td>${new Date(media.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn" onclick="copyUrl('${media.url}')">Copy URL</button>
+                        <button class="btn" onclick="downloadFile('${media.id}')">Download</button>
+                        <button class="btn btn-danger" onclick="deleteMedia('${media.id}')">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function loadFolders() {
+            const folders = [...new Set(medias.map(m => m.folder))];
+            const container = document.getElementById('folders-container');
+            container.innerHTML = '<span class="folder-tag active" onclick="filterByFolder(\'\')">All</span>';
+            
+            folders.forEach(folder => {
+                const tag = document.createElement('span');
+                tag.className = 'folder-tag';
+                tag.textContent = folder;
+                tag.onclick = () => filterByFolder(folder);
+                container.appendChild(tag);
+            });
+        }
+
+        function filterByFolder(folder) {
+            // Update active folder tag
+            document.querySelectorAll('.folder-tag').forEach(tag => tag.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update filter dropdown
+            document.getElementById('folder-filter').value = folder;
+            filterMedias();
+        }
+
+        function filterMedias() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const folderFilter = document.getElementById('folder-filter').value;
+            
+            filteredMedias = medias.filter(media => {
+                const matchesSearch = media.filename.toLowerCase().includes(searchTerm);
+                const matchesFolder = folderFilter === '' || media.folder === folderFilter;
+                return matchesSearch && matchesFolder;
+            });
+            
+            displayMedias();
+        }
+
+        function copyUrl(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('URL copied to clipboard!');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = url;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('URL copied to clipboard!');
+            });
+        }
+
+        async function downloadFile(mediaId) {
+            try {
+                const response = await fetch(`/api/medias/${mediaId}/download`);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = '';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    alert('Error downloading file');
+                }
+            } catch (error) {
+                console.error('Error downloading file:', error);
+                alert('Error downloading file');
+            }
+        }
+
+        async function deleteMedia(mediaId) {
+            if (confirm('Are you sure you want to delete this file?')) {
+                try {
+                    const response = await fetch(`/api/medias/${mediaId}`, {
+                        method: 'DELETE'
+                    });
+                    if (response.ok) {
+                        loadMedias();
+                    } else {
+                        alert('Error deleting file');
+                    }
+                } catch (error) {
+                    console.error('Error deleting file:', error);
+                    alert('Error deleting file');
+                }
+            }
+        }
+    </script>
+</body>
+</html> 

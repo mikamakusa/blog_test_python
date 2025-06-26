@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Polls</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .polls-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .polls-table th, .polls-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .polls-table th {
+            background-color: #f2f2f2;
+        }
+        .form-container {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .answers-container {
+            border: 1px solid #ddd;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+        .answer-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            gap: 0.5rem;
+        }
+        .answer-item input {
+            flex: 1;
+        }
+        .btn {
+            background: #2d3e50;
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-right: 0.5rem;
+        }
+        .btn:hover {
+            background: #ffb347;
+            color: #222;
+        }
+        .btn-danger {
+            background: #d32f2f;
+        }
+        .btn-danger:hover {
+            background: #b71c1c;
+        }
+        .btn-success {
+            background: #388e3c;
+        }
+        .btn-success:hover {
+            background: #2e7d32;
+        }
+        .btn-small {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        .status-active {
+            color: #388e3c;
+            font-weight: bold;
+        }
+        .status-inactive {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        .search-container {
+            margin-bottom: 1rem;
+        }
+        .search-container input {
+            width: 300px;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+        }
+        .filter-container {
+            margin-bottom: 1rem;
+        }
+        .filter-container select {
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Manage Polls</h1>
+        <nav>
+            <a href="/admin">Back to Dashboard</a>
+        </nav>
+    </header>
+    <main>
+        <div class="form-container">
+            <h2 id="form-title">Create New Poll</h2>
+            <form id="poll-form">
+                <input type="hidden" id="poll-id" name="id">
+                <div class="form-group">
+                    <label for="question">Question:</label>
+                    <textarea id="question" name="question" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="is_active">Status:</label>
+                    <select id="is_active" name="is_active">
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Answers:</label>
+                    <div class="answers-container" id="answers-container">
+                        <div class="answer-item">
+                            <input type="text" name="answers[]" placeholder="Answer text" required>
+                            <button type="button" class="btn btn-danger btn-small" onclick="removeAnswer(this)">Remove</button>
+                        </div>
+                        <div class="answer-item">
+                            <input type="text" name="answers[]" placeholder="Answer text" required>
+                            <button type="button" class="btn btn-danger btn-small" onclick="removeAnswer(this)">Remove</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn" onclick="addAnswer()">Add Answer</button>
+                </div>
+                <button type="submit" class="btn btn-success">Save Poll</button>
+                <button type="button" class="btn" onclick="resetForm()">Cancel</button>
+            </form>
+        </div>
+
+        <div class="form-container">
+            <h2>Polls List</h2>
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search polls by question..." onkeyup="filterPolls()">
+            </div>
+            <div class="filter-container">
+                <select id="status-filter" onchange="filterPolls()">
+                    <option value="">All Status</option>
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                </select>
+            </div>
+            <button class="btn" onclick="showCreateForm()">Create New Poll</button>
+            <table class="polls-table">
+                <thead>
+                    <tr>
+                        <th>Question</th>
+                        <th>Answers</th>
+                        <th>Total Votes</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="polls-table-body">
+                    <!-- Polls will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        let polls = [];
+        let filteredPolls = [];
+
+        // Load polls on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPolls();
+        });
+
+        async function loadPolls() {
+            try {
+                const response = await fetch('/api/polls');
+                const data = await response.json();
+                polls = data.polls || [];
+                filteredPolls = [...polls];
+                displayPolls();
+            } catch (error) {
+                console.error('Error loading polls:', error);
+            }
+        }
+
+        function displayPolls() {
+            const tbody = document.getElementById('polls-table-body');
+            tbody.innerHTML = '';
+
+            filteredPolls.forEach(poll => {
+                const row = document.createElement('tr');
+                const answersText = poll.answers.map(a => a.text).join(', ');
+                row.innerHTML = `
+                    <td>${poll.question}</td>
+                    <td>${answersText}</td>
+                    <td>${poll.total_votes || 0}</td>
+                    <td class="${poll.is_active ? 'status-active' : 'status-inactive'}">
+                        ${poll.is_active ? 'Active' : 'Inactive'}
+                    </td>
+                    <td>${new Date(poll.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn" onclick="editPoll('${poll.id}')">Edit</button>
+                        <button class="btn" onclick="viewResults('${poll.id}')">Results</button>
+                        <button class="btn btn-danger" onclick="deletePoll('${poll.id}')">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function filterPolls() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const statusFilter = document.getElementById('status-filter').value;
+            
+            filteredPolls = polls.filter(poll => {
+                const matchesSearch = poll.question.toLowerCase().includes(searchTerm);
+                const matchesStatus = statusFilter === '' || poll.is_active.toString() === statusFilter;
+                return matchesSearch && matchesStatus;
+            });
+            
+            displayPolls();
+        }
+
+        function showCreateForm() {
+            document.getElementById('form-title').textContent = 'Create New Poll';
+            document.getElementById('poll-form').reset();
+            document.getElementById('poll-id').value = '';
+            resetAnswers();
+        }
+
+        function editPoll(pollId) {
+            const poll = polls.find(p => p.id === pollId);
+            if (poll) {
+                document.getElementById('form-title').textContent = 'Edit Poll';
+                document.getElementById('poll-id').value = poll.id;
+                document.getElementById('question').value = poll.question;
+                document.getElementById('is_active').value = poll.is_active.toString();
+                
+                resetAnswers();
+                poll.answers.forEach(answer => {
+                    addAnswer(answer.text);
+                });
+            }
+        }
+
+        async function viewResults(pollId) {
+            try {
+                const response = await fetch(`/api/polls/${pollId}/results`);
+                const results = await response.json();
+                
+                let resultsText = `Question: ${results.question}\n\n`;
+                results.results.forEach(result => {
+                    const percentage = result.percentage || 0;
+                    resultsText += `${result.text}: ${result.votes} votes (${percentage}%)\n`;
+                });
+                resultsText += `\nTotal votes: ${results.total_votes}`;
+                
+                alert(resultsText);
+            } catch (error) {
+                console.error('Error loading results:', error);
+                alert('Error loading poll results');
+            }
+        }
+
+        async function deletePoll(pollId) {
+            if (confirm('Are you sure you want to delete this poll?')) {
+                try {
+                    const response = await fetch(`/api/polls/${pollId}`, {
+                        method: 'DELETE'
+                    });
+                    if (response.ok) {
+                        loadPolls();
+                    } else {
+                        alert('Error deleting poll');
+                    }
+                } catch (error) {
+                    console.error('Error deleting poll:', error);
+                    alert('Error deleting poll');
+                }
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('form-title').textContent = 'Create New Poll';
+            document.getElementById('poll-form').reset();
+            document.getElementById('poll-id').value = '';
+            resetAnswers();
+        }
+
+        function resetAnswers() {
+            const container = document.getElementById('answers-container');
+            container.innerHTML = `
+                <div class="answer-item">
+                    <input type="text" name="answers[]" placeholder="Answer text" required>
+                    <button type="button" class="btn btn-danger btn-small" onclick="removeAnswer(this)">Remove</button>
+                </div>
+                <div class="answer-item">
+                    <input type="text" name="answers[]" placeholder="Answer text" required>
+                    <button type="button" class="btn btn-danger btn-small" onclick="removeAnswer(this)">Remove</button>
+                </div>
+            `;
+        }
+
+        function addAnswer(text = '') {
+            const container = document.getElementById('answers-container');
+            const answerItem = document.createElement('div');
+            answerItem.className = 'answer-item';
+            answerItem.innerHTML = `
+                <input type="text" name="answers[]" placeholder="Answer text" value="${text}" required>
+                <button type="button" class="btn btn-danger btn-small" onclick="removeAnswer(this)">Remove</button>
+            `;
+            container.appendChild(answerItem);
+        }
+
+        function removeAnswer(button) {
+            const container = document.getElementById('answers-container');
+            if (container.children.length > 1) {
+                button.parentElement.remove();
+            }
+        }
+
+        document.getElementById('poll-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const answers = [];
+            formData.getAll('answers[]').forEach(text => {
+                if (text.trim()) {
+                    answers.push({ text: text.trim() });
+                }
+            });
+
+            if (answers.length < 2) {
+                alert('At least 2 answers are required');
+                return;
+            }
+
+            const pollData = {
+                question: formData.get('question'),
+                is_active: formData.get('is_active') === 'true',
+                answers: answers
+            };
+
+            const pollId = formData.get('id');
+            const url = pollId ? `/api/polls/${pollId}` : '/api/polls';
+            const method = pollId ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(pollData)
+                });
+
+                if (response.ok) {
+                    loadPolls();
+                    resetForm();
+                } else {
+                    alert('Error saving poll');
+                }
+            } catch (error) {
+                console.error('Error saving poll:', error);
+                alert('Error saving poll');
+            }
+        });
+    </script>
+</body>
+</html> 

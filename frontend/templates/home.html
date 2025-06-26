@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Blog Home</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <h1>Blog Home</h1>
+        <nav>
+            <a href="/login">Admin Login</a>
+        </nav>
+    </header>
+    <main>
+        <section id="main-content">
+            <h2>Posts</h2>
+            {% for post in posts %}
+                <article>
+                    <h3>{{ post.title }}</h3>
+                    <p>{{ post.description }}</p>
+                    <div>{{ post.html_content|safe }}</div>
+                    <p><em>By {{ post.author }}</em></p>
+                </article>
+            {% else %}
+                <p>No posts available.</p>
+            {% endfor %}
+        </section>
+        <aside id="sidebar">
+            <section>
+                <h3>Events</h3>
+                <ul>
+                {% for event in events %}
+                    <li>{{ event.name }} ({{ event.date_start[:10] }} - {{ event.date_end[:10] }})</li>
+                {% else %}
+                    <li>No events.</li>
+                {% endfor %}
+                </ul>
+            </section>
+            <section>
+                <h3>Polls</h3>
+                <ul>
+                {% for poll in polls %}
+                    <li>{{ poll.question }}</li>
+                {% else %}
+                    <li>No polls.</li>
+                {% endfor %}
+                </ul>
+            </section>
+        </aside>
+    </main>
+    <footer>
+        <section id="ads">
+            {% for ad in ads %}
+                <a href="{{ ad.url }}" target="_blank">
+                    <img src="{{ ad.image }}" alt="{{ ad.title }}" style="max-width:200px;max-height:100px;">
+                </a>
+            {% endfor %}
+        </section>
+        <p>&copy; Blog Engine</p>
+    </footer>
+</body>
+</html> 
