@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../deploy.yaml
+  - ../../svc.yaml
+patches:
+  - path: deployment.yaml
+  - path: service.yaml
+namePrefix: python
+nameSuffix: blog
+namespace: blog-python
+secretGenerator:
+  - name: MONGODB_SECRET
+    type: Opaque
+    literals:
+      - MONGODB_USERNAME=admin
+      - MONGODB_PASSWORD=password

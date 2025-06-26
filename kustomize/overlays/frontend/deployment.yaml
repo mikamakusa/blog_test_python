@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      name: frontend
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: python-blog-frontend:latest
+          imagePullPolicy: Always
+          env:
+            - name: MONGODB_HOST
+              value: "mongodb"
+            - name: MONGODB_PORT
+              value: "27017"
+            - name: MONGODB_DATABASE
+              value: "blog_auth"
+            - name: MONGODB_COLLECTION
+              value: "auth"
+            - name: MONGODB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: secrets
+                  name: mongodb_username
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: secrets
+                  name: mongodb_password
+          livenessProbe:
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            httpGet:
+              port: 8000
+              path: /health
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+      restartPolicy: Always
+      

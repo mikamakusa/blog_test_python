@@ -1,0 +1,168 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-auth:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: 3.12.3
+    steps:
+      - name: login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: check python version - must be ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Build the auth Docker Image
+        run: |
+          docker build . --file auth/Dockerfile --tag python-blog-auth:latest
+          docker tag python-blog-auth:latest mikamakusa/python-blog-auth:latest
+          docker push mikamakusa/python-blog-auth:latest
+  build-ads:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: 3.12.3
+    steps:
+      - name: login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: check python version - must be ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Build the auth Docker Image
+        run: |
+          docker build . --file ads/Dockerfile --tag python-blog-ads:latest
+          docker tag python-blog-ads:latest mikamakusa/python-blog-ads:latest
+          docker push mikamakusa/python-blog-ads:latest
+  build-events:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: 3.12.3
+    steps:
+      - name: login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: check python version - must be ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Build the events Docker Image
+        run: |
+          docker build . --file events/Dockerfile --tag python-blog-events:latest
+          docker tag python-blog-events:latest mikamakusa/python-blog-events:latest
+          docker push mikamakusa/python-blog-events:latest
+  build-frontend:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: 3.12.3
+    steps:
+      - name: login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: check python version - must be ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Build the frontend Docker Image
+        run: |
+          docker build . --file frontend/Dockerfile --tag python-blog-frontend:latest
+          docker tag python-blog-frontend:latest mikamakusa/python-blog-frontend:latest
+          docker push mikamakusa/python-blog-frontend:latest
+  build-medias:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: 3.12.3
+    steps:
+      - name: login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: check python version - must be ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Build the medias Docker Image
+        run: |
+          docker build . --file medias/Dockerfile --tag python-blog-medias:latest
+          docker tag python-blog-medias:latest mikamakusa/python-blog-medias:latest
+          docker push mikamakusa/python-blog-medias:latest
+  build-metrics:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: 3.12.3
+    steps:
+      - name: login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: check python version - must be ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Build the metrics Docker Image
+        run: |
+          docker build . --file metrics/Dockerfile --tag python-blog-metrics:latest
+          docker tag python-blog-metrics:latest mikamakusa/python-blog-metrics:latest
+          docker push mikamakusa/python-blog-metrics:latest
+  build-polls:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: 3.12.3
+    steps:
+      - name: login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: check python version - must be ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Build the polls Docker Image
+        run: |
+          docker build . --file polls/Dockerfile --tag python-blog-polls:latest
+          docker tag python-blog-polls:latest mikamakusa/python-blog-polls:latest
+          docker push mikamakusa/python-blog-polls:latest
+  build-posts:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: 3.12.3
+    steps:
+      - name: login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: check python version - must be ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Build the posts Docker Image
+        run: |
+          docker build . --file posts/Dockerfile --tag python-blog-posts:latest
+          docker tag python-blog-posts:latest mikamakusa/python-blog-posts:latest
+          docker push mikamakusa/python-blog-posts:latest

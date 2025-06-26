@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ads
+  labels:
+    app: ads
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ads
+  template:
+    metadata:
+      name: ads
+      labels:
+        app: ads
+    spec:
+      containers:
+        - name: ads
+          image: python-blog-ads:latest
+          imagePullPolicy: Always
+          env:
+            - name: MINIO_HOST
+              value: "minio"
+            - name: Minio_PORT
+              value: "9000"
+            - name: MINIO_BUCKET
+              value: "blog_medias"
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: secrets
+                  name: minio_access_key
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: secrets
+                  name: minio_secret_key
+          livenessProbe:
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            httpGet:
+              port: 8000
+              path: /health
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+      restartPolicy: Always
+      
