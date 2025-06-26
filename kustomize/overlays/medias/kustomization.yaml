@@ -4,7 +4,53 @@ resources:
   - ../../deploy.yaml
   - ../../svc.yaml
 patches:
-  - path: deployment.yaml
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: metrics
+        labels:
+          app: metrics
+      spec:
+        selector:
+          matchLabels:
+            app: metrics
+        template:
+          metadata:
+            name: metrics
+            labels:
+              app: metrics
+          spec:
+            containers:
+              - name: metrics
+                image: python-blog-metrics:latest
+                env:
+                  - name: MINIO_HOST
+                    value: "minio"
+                  - name: MINIO_PORT
+                    value: "9000"
+                  - name: MINIO_BUCKET
+                    value: "medias"
+                  - name: MINIO_ACCESS_KEY
+                    valueFrom:
+                      secretKeyRef:
+                        key: MINIO_SECRET
+                        name: MINIO_ACCESS_KEY
+                  - name: MINIO_SECRET_KEY
+                    valueFrom:
+                      secretKeyRef:
+                        key: MINIO_SECRET
+                        name: MINIO_SECRET_KEY
+  - patch: |-
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: metrics
+      spec:
+        selector:
+          app: metrics
+        ports:
+          - nodePort: 32316
 namePrefix: python
 nameSuffix: blog
 namespace: blog-python

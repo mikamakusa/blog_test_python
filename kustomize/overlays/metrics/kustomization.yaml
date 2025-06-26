@@ -4,7 +4,47 @@ resources:
   - ../../deploy.yaml
   - ../../svc.yaml
 patches:
-  - path: deployment.yaml
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: metrics
+        labels:
+          app: metrics
+      spec:
+        selector:
+          matchLabels:
+            app: metrics
+        template:
+          metadata:
+            name: metrics
+            labels:
+              app: metrics
+          spec:
+            containers:
+              - name: metrics
+                image: python-blog-metrics:latest
+                env:
+                  - name: MONGODB_USERNAME
+                    valueFrom:
+                      secretKeyRef:
+                        key: secrets
+                        name: mongodb_username
+                  - name: MONGODB_PASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        key: secrets
+                        name: mongodb_password
+  - patch: |-
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: metrics
+      spec:
+        selector:
+          app: metrics
+        ports:
+          - nodePort: 32317
 namePrefix: python
 nameSuffix: blog
 namespace: blog-python

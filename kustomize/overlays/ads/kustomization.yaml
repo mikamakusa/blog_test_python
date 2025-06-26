@@ -4,8 +4,47 @@ resources:
   - ../../deploy.yaml
   - ../../svc.yaml
 patches:
-  - path: deployment.yaml
-  - path: service.yaml
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: ads
+        labels:
+          app: ads
+      spec:
+        selector:
+          matchLabels:
+            name: ads
+        template:
+          metadata:
+            name: ads
+          spec:
+            containers:
+              - name: ads
+                image: python-blog-ads:latest
+                env:
+                  - name: MONGODB_COLLECTION
+                    value: "ads"
+                  - name: MONGODB_USERNAME
+                    valueFrom:
+                      secretKeyRef:
+                        key: secrets
+                        name: mongodb_username
+                  - name: MONGODB_PASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        key: secrets
+                        name: mongodb_password
+  - patch: |-
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: ads
+      spec:
+        selector:
+          app: ads
+        ports:
+          - nodePort: 32312
 namePrefix: python
 nameSuffix: blog
 namespace: blog-python

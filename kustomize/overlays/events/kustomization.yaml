@@ -4,7 +4,47 @@ resources:
   - ../../deploy.yaml
   - ../../svc.yaml
 patches:
-  - path: deployment.yaml
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: events
+        labels:
+          app: events
+      spec:
+        selector:
+          matchLabels:
+            name: events
+        template:
+          metadata:
+            name: events
+          spec:
+            containers:
+              - name: events
+                image: python-blog-events:latest
+                env:
+                  - name: MONGODB_COLLECTION
+                    value: "events"
+                  - name: MONGODB_USERNAME
+                    valueFrom:
+                      secretKeyRef:
+                        key: secrets
+                        name: mongodb_username
+                  - name: MONGODB_PASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        key: secrets
+                        name: mongodb_password
+  - patch: |-
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: events
+      spec:
+        selector:
+          app: events
+        ports:
+          - nodePort: 32314
 namePrefix: python
 nameSuffix: blog
 namespace: blog-python

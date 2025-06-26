@@ -4,7 +4,47 @@ resources:
   - ../../deploy.yaml
   - ../../svc.yaml
 patches:
-  - path: deployment.yaml
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: polls
+        labels:
+          app: polls
+      spec:
+        selector:
+          matchLabels:
+            app: polls
+        template:
+          metadata:
+            name: polls
+            labels:
+              app: polls
+          spec:
+            containers:
+              - name: polls
+                image: python-blog-polls:latest
+                env:
+                  - name: MONGODB_USERNAME
+                    valueFrom:
+                      secretKeyRef:
+                        key: secrets
+                        name: mongodb_username
+                  - name: MONGODB_PASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        key: secrets
+                        name: mongodb_password
+  - patch: |-
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: polls
+      spec:
+        selector:
+          app: polls
+        ports:
+          - nodePort: 32318
 namePrefix: python
 nameSuffix: blog
 namespace: blog-python

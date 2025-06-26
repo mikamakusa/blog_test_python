@@ -4,7 +4,36 @@ resources:
   - ../../deploy.yaml
   - ../../svc.yaml
 patches:
-  - path: deployment.yaml
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: frontend
+        labels:
+          app: frontend
+      spec:
+        selector:
+          matchLabels:
+            app: frontend
+        template:
+          metadata:
+            name: frontend
+            labels:
+              app: frontend
+          spec:
+            containers:
+              - name: frontend
+                image: python-blog-frontend:latest
+  - patch: |-
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: frontend
+      spec:
+        selector:
+          app: frontend
+        ports:
+          - nodePort: 32315
 namePrefix: python
 nameSuffix: blog
 namespace: blog-python
