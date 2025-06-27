@@ -1,42 +1,56 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../../deploy.yaml
-  - ../../svc.yaml
+  - ../../base/
 patches:
-  - patch: |-
-      apiVersion: apps/v1
+  - target:
+      group: apps
+      version: v1
       kind: Deployment
-      metadata:
-        name: frontend
-        labels:
-          app: frontend
-      spec:
-        selector:
-          matchLabels:
-            app: frontend
-        template:
-          metadata:
-            name: frontend
-            labels:
-              app: frontend
-          spec:
-            containers:
-              - name: frontend
-                image: python-blog-frontend:latest
-  - patch: |-
-      apiVersion: v1
+      name: title
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: "frontend"
+      - op: replace
+        path: /metadata/labels/app
+        value: "frontend"
+      - op: replace
+        path: /spec/selector/matchLabels/app
+        value: "frontend"
+      - op: replace
+        path: /spec/template/metadata/name
+        value: "frontend"
+      - op: replace
+        path: /spec/template/metadata/labels/app
+        value: "frontend"
+      - op: replace
+        path: /spec/template/spec/containers/0/env/3/value
+        value: "frontend"
+      - op: replace
+        path: /spec/template/spec/containers/0/name
+        value: "frontend"
+  - target:
       kind: Service
-      metadata:
-        name: frontend
-      spec:
-        selector:
-          app: frontend
-        ports:
-          - nodePort: 32315
-namePrefix: python
-nameSuffix: blog
+      name: title
+      version: v1
+    patch: |-
+      - op: add
+        path: /spec/ports/0/nodePort
+        value: 32315
+      - op: replace
+        path: /metadata/name
+        value: "frontend"
+      - op: replace
+        path: /spec/selector/app
+        value: "frontend"
+namePrefix: python-
+nameSuffix: -blog
 namespace: blog-python
+images:
+  - name: image
+    newName: python-blog-frontend
+    newTag: latest
 secretGenerator:
   - name: MONGODB_SECRET
     type: Opaque

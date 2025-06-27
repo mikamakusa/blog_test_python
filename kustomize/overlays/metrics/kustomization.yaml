@@ -1,53 +1,56 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../../deploy.yaml
-  - ../../svc.yaml
+  - ../../base/
 patches:
-  - patch: |-
-      apiVersion: apps/v1
+  - target:
+      group: apps
+      version: v1
       kind: Deployment
-      metadata:
-        name: metrics
-        labels:
-          app: metrics
-      spec:
-        selector:
-          matchLabels:
-            app: metrics
-        template:
-          metadata:
-            name: metrics
-            labels:
-              app: metrics
-          spec:
-            containers:
-              - name: metrics
-                image: python-blog-metrics:latest
-                env:
-                  - name: MONGODB_USERNAME
-                    valueFrom:
-                      secretKeyRef:
-                        key: secrets
-                        name: mongodb_username
-                  - name: MONGODB_PASSWORD
-                    valueFrom:
-                      secretKeyRef:
-                        key: secrets
-                        name: mongodb_password
-  - patch: |-
-      apiVersion: v1
+      name: title
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: "metrics"
+      - op: replace
+        path: /metadata/labels/app
+        value: "metrics"
+      - op: replace
+        path: /spec/selector/matchLabels/app
+        value: "metrics"
+      - op: replace
+        path: /spec/template/metadata/name
+        value: "metrics"
+      - op: replace
+        path: /spec/template/metadata/labels/app
+        value: "metrics"
+      - op: replace
+        path: /spec/template/spec/containers/0/env/3/value
+        value: "metrics"
+      - op: replace
+        path: /spec/template/spec/containers/0/name
+        value: "metrics"
+  - target:
       kind: Service
-      metadata:
-        name: metrics
-      spec:
-        selector:
-          app: metrics
-        ports:
-          - nodePort: 32317
-namePrefix: python
-nameSuffix: blog
+      name: title
+      version: v1
+    patch: |-
+      - op: add
+        path: /spec/ports/0/nodePort
+        value: 32317
+      - op: replace
+        path: /metadata/name
+        value: "metrics"
+      - op: replace
+        path: /spec/selector/app
+        value: "metrics"
+namePrefix: python-
+nameSuffix: -blog
 namespace: blog-python
+images:
+  - name: image
+    newName: python-blog-metrics
+    newTag: latest
 secretGenerator:
   - name: MONGODB_SECRET
     type: Opaque

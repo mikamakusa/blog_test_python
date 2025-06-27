@@ -7,8 +7,7 @@ spec:
     app: title
   ports:
     - protocol: TCP
-      port: 8000
-      targetPort: 8000
-      nodePort: 33000
-  type: LoadBalancer
+      port: 80
+      targetPort: 8080
+  type: NodePort
   

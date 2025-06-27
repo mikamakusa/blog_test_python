@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: title
-          image: nginx
+          image: image
           imagePullPolicy: Always
           env:
             - name: MONGODB_HOST
@@ -26,6 +26,18 @@ spec:
               value: "27017"
             - name: MONGODB_DATABASE
               value: "blog_auth"
+            - name: MONGODB_COLLECTION
+              value: "ads"
+            - name: MONGODB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: secrets
+                  name: mongodb_username
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: secrets
+                  name: mongodb_password
           ports:
             - containerPort: 8000
               protocol: TCP

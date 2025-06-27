@@ -1,62 +1,59 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../../deploy.yaml
-  - ../../svc.yaml
+  - ../../base/
 patches:
-  - patch: |-
-      apiVersion: apps/v1
+  - target:
+      group: apps
+      version: v1
       kind: Deployment
-      metadata:
-        name: metrics
-        labels:
-          app: metrics
-      spec:
-        selector:
-          matchLabels:
-            app: metrics
-        template:
-          metadata:
-            name: metrics
-            labels:
-              app: metrics
-          spec:
-            containers:
-              - name: metrics
-                image: python-blog-metrics:latest
-                env:
-                  - name: MINIO_HOST
-                    value: "minio"
-                  - name: MINIO_PORT
-                    value: "9000"
-                  - name: MINIO_BUCKET
-                    value: "medias"
-                  - name: MINIO_ACCESS_KEY
-                    valueFrom:
-                      secretKeyRef:
-                        key: MINIO_SECRET
-                        name: MINIO_ACCESS_KEY
-                  - name: MINIO_SECRET_KEY
-                    valueFrom:
-                      secretKeyRef:
-                        key: MINIO_SECRET
-                        name: MINIO_SECRET_KEY
-  - patch: |-
-      apiVersion: v1
+      name: title
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: "medias"
+      - op: replace
+        path: /metadata/labels/app
+        value: "medias"
+      - op: replace
+        path: /spec/selector/matchLabels/app
+        value: "medias"
+      - op: replace
+        path: /spec/template/metadata/name
+        value: "medias"
+      - op: replace
+        path: /spec/template/metadata/labels/app
+        value: "medias"
+      - op: replace
+        path: /spec/template/spec/containers/0/env/3/value
+        value: "medias"
+      - op: replace
+        path: /spec/template/spec/containers/0/name
+        value: "medias"
+  - target:
       kind: Service
-      metadata:
-        name: metrics
-      spec:
-        selector:
-          app: metrics
-        ports:
-          - nodePort: 32316
-namePrefix: python
-nameSuffix: blog
+      name: title
+      version: v1
+    patch: |-
+      - op: add
+        path: /spec/ports/0/nodePort
+        value: 32316
+      - op: replace
+        path: /metadata/name
+        value: "medias"
+      - op: replace
+        path: /spec/selector/app
+        value: "medias"
+namePrefix: python-
+nameSuffix: -blog
 namespace: blog-python
+images:
+  - name: image
+    newName: python-blog-medias
+    newTag: latest
 secretGenerator:
-  - name: MINIO_SECRET
+  - name: MONGODB_SECRET
     type: Opaque
     literals:
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin
+      - MONGODB_USERNAME=admin
+      - MONGODB_PASSWORD=password

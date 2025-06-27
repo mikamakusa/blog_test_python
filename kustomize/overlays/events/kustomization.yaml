@@ -1,53 +1,56 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../../deploy.yaml
-  - ../../svc.yaml
+  - ../../base/
 patches:
-  - patch: |-
-      apiVersion: apps/v1
+  - target:
+      group: apps
+      version: v1
       kind: Deployment
-      metadata:
-        name: events
-        labels:
-          app: events
-      spec:
-        selector:
-          matchLabels:
-            name: events
-        template:
-          metadata:
-            name: events
-          spec:
-            containers:
-              - name: events
-                image: python-blog-events:latest
-                env:
-                  - name: MONGODB_COLLECTION
-                    value: "events"
-                  - name: MONGODB_USERNAME
-                    valueFrom:
-                      secretKeyRef:
-                        key: secrets
-                        name: mongodb_username
-                  - name: MONGODB_PASSWORD
-                    valueFrom:
-                      secretKeyRef:
-                        key: secrets
-                        name: mongodb_password
-  - patch: |-
-      apiVersion: v1
+      name: title
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: "events"
+      - op: replace
+        path: /metadata/labels/app
+        value: "events"
+      - op: replace
+        path: /spec/selector/matchLabels/app
+        value: "events"
+      - op: replace
+        path: /spec/template/metadata/name
+        value: "events"
+      - op: replace
+        path: /spec/template/metadata/labels/app
+        value: "events"
+      - op: replace
+        path: /spec/template/spec/containers/0/env/3/value
+        value: "events"
+      - op: replace
+        path: /spec/template/spec/containers/0/name
+        value: "events"
+  - target:
       kind: Service
-      metadata:
-        name: events
-      spec:
-        selector:
-          app: events
-        ports:
-          - nodePort: 32314
-namePrefix: python
-nameSuffix: blog
+      name: title
+      version: v1
+    patch: |-
+      - op: add
+        path: /spec/ports/0/nodePort
+        value: 32314
+      - op: replace
+        path: /metadata/name
+        value: "events"
+      - op: replace
+        path: /spec/selector/app
+        value: "events"
+namePrefix: python-
+nameSuffix: -blog
 namespace: blog-python
+images:
+  - name: image
+    newName: python-blog-events
+    newTag: latest
 secretGenerator:
   - name: MONGODB_SECRET
     type: Opaque
